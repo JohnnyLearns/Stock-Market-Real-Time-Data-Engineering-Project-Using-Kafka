@@ -1,0 +1,39 @@
+
+# Format the storage
+cd kafka_2.12-3.3.1
+
+# Generate a unique cluster ID
+KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
+
+# Format the log directories (defined in config/kraft/server.properties)
+bin/kafka-storage.sh format \
+  --config config/kraft/server.properties \
+  --cluster-id $KAFKA_CLUSTER_ID
+
+# Start Kafka broker
+export KAFKA_HEAP_OPTS="-Xmx256M -Xms128M"
+cd kafka_2.12-3.3.1
+bin/kafka-server-start.sh config/kraft/server.properties
+listeners=PLAINTEXT://0.0.0.0:9092
+advertised.listeners=PLAINTEXT://<EC2_PUBLIC_IP>:9092
+
+# Create a topic
+cd kafka_2.12-3.3.1
+bin/kafka-topics.sh \
+  --create \
+  --topic demo_testing2 \
+  --bootstrap-server <EC2_PUBLIC_IP>:9092 \
+  --replication-factor 1 \
+  --partitions 1
+
+# Start a producer
+bin/kafka-console-producer.sh \
+  --topic demo_testing2 \
+  --bootstrap-server <EC2_PUBLIC_IP>:9092
+
+$ Start a consumer
+cd kafka_2.12-3.3.1
+bin/kafka-console-consumer.sh \
+  --topic demo_testing2 \
+  --from-beginning \
+  --bootstrap-server <EC2_PUBLIC_IP>:9092
